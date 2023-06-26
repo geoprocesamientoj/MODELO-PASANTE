@@ -1,7 +1,7 @@
 # MODELOS-PASANTE
 Aquí se encuentran todos los modelos que realizo el pasante Jean Carlos Torres en colaboración del Ingeniero Pedro Reina.
 
-Dentro del repositorio encontramos las carpetas de los distintos codigos, estos estan nombradas deacuerdo a la codificacion que se anexa abajo en la descripcion; a su vez dentro de la carpeta encotrarar informacion basica con el fin de complementar y explicar el uso, la importancia y las recomendaciones los codigos de:
+Dentro del repositorio encontramos las carpetas de los distintos codigos realizados en google earth engine, estos estan nombradas deacuerdo a la codificacion que se anexa abajo en la descripcion; a su vez dentro de la carpeta encotrarar informacion basica con el fin de complementar y explicar el uso, la importancia y las recomendaciones los codigos de:
 
 COD_MOD_PUNTOS-DE-CALOR = Monitoreo de puntos de calor
 
