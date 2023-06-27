@@ -12,7 +12,7 @@
 //                            PART 1: SELECCIONA,DIBUJA IMPORTA EL AREA A ANALIZAR
 // incialmente debemos importar o dibujar una geometria del area donde queremos realizar el analisis por afectaciones de fuego,
 // esta se puede hacer con la herramienta de dibujo de geometrias o importando un shapefile o archivo CSV esto con el fin de deli-
-// mitar la zona de estudio.
+// mitar la zona de estudio, una vez hecho esto procedemos a colocarle nombre en la zona de archivos importados y la llamamos table.
 
 //*******************************************************************************************************************************
 //                                  PART 2: ESTABLECE LAS FECHAS DE ANALISIS
