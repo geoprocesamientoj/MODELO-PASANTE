@@ -330,6 +330,7 @@ var makeRow = function(color, name) {
       })};
  
 // Paleta con los colores
+//            verde oliva, verde amarillento, verde lima brillante, amarillo, naranja, naranja oscuro, violeta, Blanco
 var palette =['7a8737', 'acbe4d', '0ae042', 'fff70b', 'ffaf38', 'ff641b', 'a41fd6', 'ffffff'];
  
 // Nombre de la leyenda
