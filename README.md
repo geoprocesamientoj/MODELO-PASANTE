@@ -12,7 +12,7 @@ Nota: Por favor, tenga en cuenta que sólo se incluyen estos productos específi
 
 ## Contenidos del Repositorio
 
-Cada carpeta tiene su codigo y manual de uso.
+Cada repositorio contiene codigo y manual de uso.
 
 ## Uso
 
