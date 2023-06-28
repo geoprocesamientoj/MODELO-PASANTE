@@ -17,16 +17,18 @@
 //*******************************************************************************************************************************
 //                                  PART 2: ESTABLECE LAS FECHAS DE ANALISIS
 
-//Establezca las fechas de inicio y finalización de un período ANTES del incendio, esto se recomienda que para landsat 8 sea de 3
-// meses mientras que para sentinel 2 sea mas corto debido a la disponiblidad de imagenes que captan los satelites.
+//Establezca las fechas de inicio y finalización de un período ANTES del incendio, esto se recomienda que para landsat 8 sea de 3 meses
+//por análisis mientras que para sentinel 2 sea de cada mes esto la disponibilidad de imágenes que captan los satélites y en el detalle 
+//del analisis.
 
-//Estableza la fecha o parametros de inicio y fin de los incendios
-var prefire_start = '2016-12-20';   // <--- Inicio del incendio
-var prefire_end = '2017-01-18';     // <--- Fin del incendio
+//Establezca la fecha o parámetros de inicio y fin de los incendios
+var prefire_start = 'AAAA-MM-DD';   // <--- fecha de Inicio del incendio
+var prefire_end = 'AAAA-MM-DD';     // <--- fecha Fin del incendio
 
 // Establecer la fecha o parametros despues del incendio
-var postfire_start = '2017-02-20'; // <--- Inicio despùes del incendio
-var postfire_end = '2017-03-28';   // <--- Fin despues del incendio
+var postfire_start = 'AAAA-MM-DD'; // <--- fecha después del incendio
+var postfire_end = 'AAAA-MM-DD';   // <--- fecha después del incendio
+
 
 //******************************************************************************************************************************
 //                                     PART 3: SELECCIONA EL SATELITE A USAR
