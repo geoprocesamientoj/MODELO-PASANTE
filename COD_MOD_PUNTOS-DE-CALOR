@@ -678,3 +678,6 @@ Export.image.toDrive({image: dNBR, scale: 30, description:'dNBR-Clasificacion' ,
 Export.image.toDrive({image: post_cm_mos.visualize(vis), scale: 30, description: 'dNBR-ColorverdaderoDespuesdelincendio', fileNamePrefix: 'dNBR-Color verdadero Despues del incendio ',region: area, maxPixels: 1e10}); // <--- Descarga la imagen despues del incendio
 
 // Las descargas estarán disponibles en la pestaña 'Tareas' a la derecha de la pantalla.
+
+
+CODIGO GOOGLE EARTH ENGINE: https://code.earthengine.google.com/42ef5699def37613cf1b4827501cfbe4
