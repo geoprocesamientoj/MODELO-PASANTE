@@ -1,0 +1,112 @@
+//===============================================================================================================================
+//                                               MODELO MAPEO INUNDACIONES
+//===============================================================================================================================
+// Este código muestra la relación de inundación normalizada que se aplicará a las imágenes antes y después de una inundación.
+// Esto calcula la diferencia de imagenes radar para derivar la Severidad de Inundación, que muestra el impacto espacial de la perturbación. 
+// Las imágenes utilizadas en este proceso provienen de Sentinel-1 SAR.
+//===============================================================================================================================
+// By: Jean Carlos Torres, Fundacion Cataruben & ARSET 
+//===============================================================================================================================
+
+//*******************************************************************************************************************************
+//                            PART 1: SELECCIONA,DIBUJA IMPORTA EL AREA A ANALIZAR
+// incialmente debemos importar o dibujar una geometria del area donde queremos realizar el analisis por afectaciones de fuego,
+// esta se puede hacer con la herramienta de dibujo de geometrias o importando un shapefile o archivo CSV esto con el fin de deli-
+// mitar la zona de estudio, una vez hecho esto procedemos a colocarle nombre en la zona de archivos importados y la llamamos "table".
+
+//*******************************************************************************************************************************
+//                            PART 2: IDENTIFICAR Y EJECUTAR ENTRADAS DE USUARIO
+
+//------------------------ Seleccion de imagenes por tipo orbita, polarizacion y area--------------------------------------------
+// Filtre los Datos Sentinel-1
+var collectionVV = ee.ImageCollection('COPERNICUS/S1_GRD')
+.filter(ee.Filter.eq('instrumentMode', 'IW'))
+.filter(ee.Filter.listContains('transmitterReceiverPolarisation', 'VV'))
+.filter(ee.Filter.eq('orbitProperties_pass', 'DESCENDING')) //O ASCENDING
+.filterMetadata('resolution_meters', 'equals' , 10)
+.filterBounds(table)
+.select('VV');
+print(collectionVV, 'Collection VV');
+
+
+var collectionVH = ee.ImageCollection('COPERNICUS/S1_GRD')
+.filter(ee.Filter.eq('instrumentMode', 'IW'))
+.filter(ee.Filter.listContains('transmitterReceiverPolarisation', 'VH'))
+.filter(ee.Filter.eq('orbitProperties_pass', 'DESCENDING'))  //O ASCENDING
+.filterMetadata('resolution_meters', 'equals' , 10)
+.filterBounds(table)
+.select('VH');
+print(collectionVH, 'Collection VH');
+
+//******************************************************************************************************************************
+//                                     PART 3: Realizacion del mosaico del area que se importo o realizo
+
+//------------------------------------ Filtre los Datos del mosaico Sentinel-1 por Fecha-----------------------------------------
+var beforeVV = collectionVV.filterDate('AAAA-MM-DD', 'AAAA-MM-DD').mosaic(); // <--- Ingrese las fechas de antes y despues
+var afterVV = collectionVV.filterDate('AAAA-MM-DD', 'AAAA-MM-DD').mosaic();  // <--- Ingrese las fechas de antes y despues
+var beforeVH = collectionVH.filterDate('AAAA-MM-DD', 'AAAA-MM-DD').mosaic(); // <--- Ingrese las fechas de antes y despues
+var afterVH = collectionVH.filterDate('AAAA-MM-DD', 'AAAA-MM-DD').mosaic();  // <--- Ingrese las fechas de antes y despues
+
+//--------------------------------------------- Imprimir el tipo de banda --------------------------------------------------------
+print(beforeVV, 'Before VV');
+print(afterVV, 'After VV');
+print(beforeVH, 'Before VH');
+print(afterVH, 'After VH');
+//------------------------------------ Recorta los mosaicos a la geometría-------------------------------------------------------
+beforeVV = beforeVV.clip(table);
+afterVV = afterVV.clip(table);
+beforeVH = beforeVH.clip(table);
+afterVH = afterVH.clip(table);
+//------------------------------------ Agrega las imagenes al interfaz de mapa---------------------------------------------------
+Map.centerObject(table, 7); // Centra el mapa en la geometría "table"
+Map.addLayer(beforeVV, {min: -15, max: 0}, 'Despues de la inundación con la banda VV', 0);
+Map.addLayer(afterVV, {min: -15, max: 0}, 'Antes de la inundación con la banda VV', 0);
+Map.addLayer(beforeVH, {min: -25, max: 0}, 'Despues de la inundación con la banda VH', 0);
+Map.addLayer(afterVH, {min: -25, max: 0}, 'Antes de la inundación con la banda VH', 0);
+Map.addLayer(beforeVH.addBands(afterVH).addBands(beforeVH), {min: -25, max: -8},'BVH/AVV/AVH Diferencias entre las imagenes', 0);
+
+//------------------------------------------- Filtro para el “Speckle”--------------------------------------------------------------
+//Reduce el ruido speckle que es un patrón indeseado que es producido por la interferencia mutua de un conjunto de frentes de onda 
+//reflejadas de forma difusa por los elementos que componen el terreno, sobre el receptor o célula de resolución.
+
+var SMOOTHING_RADIUS = 50;   //Definir el radio de suavizado de los pixeles
+var beforeVV_filtered = beforeVV.focal_mean(SMOOTHING_RADIUS, 'circle', 'meters');
+var beforeVH_filtered = beforeVH.focal_mean(SMOOTHING_RADIUS, 'circle', 'meters');
+var afterVV_filtered = afterVV.focal_mean(SMOOTHING_RADIUS, 'circle', 'meters');
+var afterVH_filtered = afterVH.focal_mean(SMOOTHING_RADIUS, 'circle', 'meters');
+
+//------------------------------------ Agrega las imagenes al interfaz de mapa con filtrado speckle----------------------------------
+Map.addLayer(afterVV_filtered, {min:-15,max:0}, 'Antes de la inundación VV filtrado',1);
+Map.addLayer(beforeVV_filtered, {min:-15,max:0}, 'Después de la inundación VV filtrado',1);
+Map.addLayer(beforeVH_filtered, {min:-25,max:0}, 'Antes de la inundación VH filtrado',0);
+Map.addLayer(afterVH_filtered, {min:-25,max:0}, 'Después de la inundación VH filtrado',0);
+
+//------------------------------------ Calcular la Diferencia entre Antes y Después y visualizacion----------------------------------
+var differenceVH= afterVH_filtered.divide(beforeVH_filtered);
+Map.addLayer(differenceVH, {min: 0,max:2},'difference VH filtered', 0);
+
+
+//******************************************************************************************************************************
+//                                           PART 4: Aplicado de umbral
+//Cuando se aplica un umbral a una imagen o banda en GEE, se compara cada valor de píxel con el umbral especificado. Si el valor 
+//del píxel es mayor que el umbral, se asigna el valor 1 o verdadero; si es menor o igual al umbral, se asigna el valor 0 o falso.
+
+
+var DIFF_UPPER_THRESHOLD = 0.885; // <--- Ingrese el valor del umbral normalmente el valor del umbral es de  0.885 o valores cercanos
+var differenceVH_thresholded = differenceVH.gt(DIFF_UPPER_THRESHOLD);
+Map.addLayer(differenceVH_thresholded.updateMask(differenceVH_thresholded),{palette:"0000FF"},'flooded areas - blue',1);
+Map.centerObject(table, 10); // <--- Centrar el mapa en la geometria importada o realizada
+
+
+//***************************************************************************************************************************************
+//                                      PARTE 5: PREPARAR EXPORTACIÓN DE ARCHIVO
+//Asegurate que al momento de descargar el archivo le ingreses el codigo del sistema de coordenadas que deseas, como se llamara
+// el archivo, en que carpeta se va alojar y como aparecera el nombre del archivo en el panel de descargas
+Export.image.toDrive({
+image: differenceVH_thresholded,
+description: 'Inudacion',
+scale: 10,
+region: table,
+maxPixels: 1e13,
+crs : 'EPSG:3116'
+});
