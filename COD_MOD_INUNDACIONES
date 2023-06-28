@@ -110,3 +110,5 @@ region: table,
 maxPixels: 1e13,
 crs : 'EPSG:3116'
 });
+
+CODIGO GOOGLE EARTH ENGINE: https://code.earthengine.google.com/786d460c7033cff2afb7c312b8cf1058
