@@ -1,4 +1,4 @@
-# CODIGOS Y PROCESOS DE AREAS AFECTADAS POR INCENDIOS, INUNDACION, PARAMUNO, Orinoco2
+# CODIGOS Y PROCESOS DE AREAS AFECTADAS POR INCENDIOS, INUNDACION, PARAMUNO, ORINOCO2
 
 Este repositorio contiene los codigo realizado en lenguaje JavaScript en la interfaz de google earth engine y procedimientos de uso; en la cual sirven de soporte para realizar los analisis de salvaguardas para monitoreo de areas afectadas por incendios de cualquier iniciativa de proyectos que realiza la fundacion cataruben.
 
