@@ -1,0 +1,181 @@
+// Define las rutas y filas
+var rutas = [4,4,5,5,5,6,6,6,7,7,7,8,8,8];
+var filas = [56,57,56,57,58,56,57,58,57,58,59,57,58,59];
+
+// Define el rango de fechas
+var fechaInicio = 'AAAA-MM-DD';
+var fechaFin = 'AAAA-MM-DD';
+
+// Define la colección
+var coleccion = ee.ImageCollection('LANDSAT/LC08/C01/T1'); //seleccion de satelite
+
+// Crea una ImageCollection vacía para almacenar las imágenes sin nubes
+var coleccionSinNubes = ee.ImageCollection([]);
+
+// Itera sobre cada par de ruta y fila
+for (var i = 0; i < rutas.length; i++) {
+var ruta = rutas[i];
+var fila = filas[i];
+
+// Filtra la colección por ruta, fila y rango de fechas
+var coleccionFiltrada = coleccion
+.filter(ee.Filter.eq('WRS_PATH', ruta))
+.filter(ee.Filter.eq('WRS_ROW', fila))
+.filter(ee.Filter.date(fechaInicio, fechaFin));
+
+// Filtra la colección por cobertura de nubes
+var imagenesSinNubes = coleccionFiltrada
+.filterMetadata('CLOUD_COVER', 'less_than', 10); // Ajusta el umbral de cobertura de nubes según sea necesario
+
+// Agrega las imágenes sin nubes a la colección sin nubes
+coleccionSinNubes = coleccionSinNubes.merge(imagenesSinNubes);
+
+// Obtiene la primera imagen de la colección
+var imagen = imagenesSinNubes.first();
+
+// Definición de los parámetros de visualización
+var parametrosVis = {
+bands: ['B4', 'B3', 'B2'], // Rojo, Verde, Azul
+min: 9.58005620496857,
+max: 36.533899965735
+};
+
+// Muestra la imagen con los parámetros de visualización
+var vistaImagen = imagen.visualize(parametrosVis);
+
+// Muestra la imagen en el mapa de Earth Engine
+Map.addLayer(vistaImagen, {}, 'landsat ' + 'ruta: ' + ruta + ', fila: ' + fila, 0);
+
+// Obtiene el número de imágenes en la colección
+var numImagenes = imagenesSinNubes.size();
+
+// Imprime el número de imágenes
+print('Número de imágenes para ruta ' + ruta + ' y fila ' + fila + ': ' + numImagenes.getInfo());
+}
+
+// Crea un composite simple de la colección sin nubes
+var composite = ee.Algorithms.Landsat.simpleComposite(coleccionSinNubes);
+
+// Filtra las bandas
+composite = composite.select(['B2', 'B3', 'B4', 'B5', 'B6', 'B7']);
+var composite =composite.clip(table);
+
+// Define los parámetros de visualización RGB
+var parametrosRGB = {
+bands: ['B6', 'B5', 'B4'], // Rojo, Verde, Azul
+min: 10,
+max: 107
+};
+// Configura el centro del mapa
+Map.setCenter(-71, 4, 7);
+// Agrega el composite RGB al mapa
+Map.addLayer(composite, parametrosRGB, 'Composite RGB');
+
+// Calcula el Índice de Vegetación de Diferencia Normalizada (NDVI)
+var ndvi = composite.normalizedDifference(['B5', 'B4']).rename('NDVI');
+
+// Define los parámetros de visualización para el NDVI
+var parametrosNDVI = {
+min: -1, // Valor mínimo del NDVI
+max: 1, // Valor máximo del NDVI
+palette: ['red', 'yellow', 'green'] // Paleta de colores para el NDVI
+};
+
+// Agrega la capa de NDVI al mapa
+Map.addLayer(ndvi, parametrosNDVI, 'NDVI');
+
+// Agrega la banda NDVI a la imagen compuesta
+//composite = composite.addBands(ndvi);
+
+// Concatena las características
+var poligonos = urbano.merge(agricola).merge(bosque).merge(suelovisible).merge(arbustal).merge(herbazal).merge(transicional).merge(agua).merge(humedad).merge(atmosfera)
+
+//.merge(herbazal).merge(agua).merge(agricola).merge(artificial).merge(nubes).merge(sombras);
+
+// Muestrea la imagen compuesta utilizando la colección de polígonos
+var puntos = composite.sampleRegions({
+collection: poligonos,
+properties: ["landcover"],
+scale: 30
+});
+
+// Obtiene una muestra aleatoria de la colección de características, limitada a 5000 puntos
+var puntosFinal = puntos.randomColumn('random', 123)
+.sort('random')
+.limit(5000);
+
+// Obtiene los valores únicos de la propiedad "landcover"
+var landcoverUnicos = puntosFinal.aggregate_array('landcover').distinct();
+
+// Itera sobre cada valor de landcover y cuenta el número de puntos
+landcoverUnicos.evaluate(function(valoresLandcover) {
+valoresLandcover.forEach(function(landcover) {
+var count = puntosFinal.filter(ee.Filter.eq('landcover', landcover)).size();
+print('Cantidad de puntos para landcover ' + landcover + ':', count);
+});
+});
+
+print('Total de puntos', puntosFinal);
+
+// Agrega un campo de valor aleatorio a la muestra y lo utiliza para dividir aproximadamente el 80%
+// de las características en un conjunto de entrenamiento y el 20% en un conjunto de validación.
+var muestra = puntosFinal.randomColumn();
+var muestraEntrenamiento = muestra.filter('random <= 0.8');
+var muestraValidacion = muestra.filter('random > 0.8');
+
+// Entrena un clasificador de bosque aleatorio con 100 árboles a partir de la muestra de entrenamiento.
+var clasificadorEntrenado = ee.Classifier.smileRandomForest(100).train({
+features: muestraEntrenamiento,
+classProperty: 'landcover',
+inputProperties: composite.bandNames()
+});
+
+// Obtiene información sobre el clasificador entrenado.
+print('Resultados del clasificador entrenado', clasificadorEntrenado.explain());
+
+// Obtiene una matriz de confusión y precisión general para la muestra de entrenamiento.
+var precisionEntrenamiento = clasificadorEntrenado.confusionMatrix();
+print('Matriz de error de entrenamiento', precisionEntrenamiento);
+print('Precisión general de entrenamiento', precisionEntrenamiento.accuracy());
+
+// Obtiene una matriz de confusión y precisión general para la muestra de validación.
+muestraValidacion = muestraValidacion.classify(clasificadorEntrenado);
+var precisionValidacion = muestraValidacion.errorMatrix('landcover', 'classification');
+print('Matriz de error de validación', precisionValidacion);
+print('Precisión de validación', precisionValidacion.accuracy());
+
+// Clasifica la imagen compuesta utilizando el clasificador entrenado.
+var imgClasificada = composite.classify(clasificadorEntrenado);
+
+// Agrega las capas al mapa.
+var parametrosVisClasificacion = {
+min: 1,
+max: 10,
+palette: ['808080', 'FFA500','008000','FA8072','E3A857','FFFF00', '00FF00', '0000FF', '800080','00FFFF']
+};
+
+// Calcula el Índice de Agua Normalizada Diferenciada (NDWI)
+var ndwi = composite.normalizedDifference(['B3', 'B5']).rename('NDWI');
+
+// Define los parámetros de visualización para el NDWI
+var parametrosNDWI = {
+min: -1, // Valor mínimo del NDWI
+max: 1, // Valor máximo del NDWI
+palette: ['green', 'yellow', 'blue'] // Paleta de colores para el NDWI
+};
+
+// Agrega la capa de NDWI al mapa
+Map.addLayer(ndwi, parametrosNDWI, 'NDWI');
+
+// Agrega la imagen clasificada al mapa con los parámetros de visualización definidos
+Map.addLayer(imgClasificada, parametrosVisClasificacion, 'Clasificado');
+Map.addLayer(table2)
+
+// Exporta la imagen clasificada con todas las bandas
+Export.image.toDrive({
+image: composite,
+description: 'rgb', // Nombre de archivo de salida a exportar a Drive
+scale: 30,
+maxPixels: 1e13
+// Lista de nombres de las bandas que deseas exportar
+});
