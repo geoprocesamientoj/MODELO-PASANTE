@@ -7,7 +7,7 @@ Este repositorio contiene los codigo realizado en lenguaje JavaScript en la inte
 Los archivos en este repositorio están organizados de la siguiente manera:
 1) Archivo que contiene el codigo en leguaje JavaScript realizado en el entorno de google earth engine quien tiene como nombre COD_MOD_PUNTOS-DE-CALOR
 2) Archivo que contiene el codigo en leguaje JavaScript realizado en el entorno de google earth engine quien tiene como nombre COD_MOD_INUNDACION
-3) Archivo que contiene el codigo en leguaje JavaScript realizado en el entorno de google earth engine quien tiene como nombre COD_MOD_PARAMUNO
+3) Archivo que contiene el codigo en leguaje JavaScript realizado en el entorno de google earth engine quien tiene como nombre COD_MOD_PARAMUNO tanto para sentinel como landsat
 4) Archivo que contiene el codigo en leguaje JavaScript realizado en el entorno de google earth engine quien tiene como nombre COD_MOD_ORINOCO2
 5) Documento que contiene el procedimiento nombrado PRO_MOD_PUNTOS-DE-CALOR en el cual tiene el paso a paso desde la adquisicion, procedimiento y resultados.
 6) Documento que contiene el procedimiento nombrado PRO_MOD_INUNDACION en el cual tiene el paso a paso desde la adquisicion, procedimiento y resultados.
