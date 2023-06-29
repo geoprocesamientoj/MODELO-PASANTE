@@ -1,3 +1,8 @@
+1) Importar los nucelos de los predios quien toma nombre de table
+2) Importar los predios que se llamaria table2
+3) Importar los predios con buffer quien se llamaria table3
+
+
 // Definir el área de interés
 var roi = table;  //table corresponde al shape o poligono de la region extensa
 
@@ -5,7 +10,7 @@ var roi = table;  //table corresponde al shape o poligono de la region extensa
 // Filtrar la colección de imágenes por fecha y área de interés
 var collection = ee.ImageCollection('LANDSAT/LC08/C01/T1_SR')
   .filterBounds(roi)
-  .filterDate('AAAA-MM-DD', 'AAAA-MM-DD')
+  .filterDate('AAAA-MM-DD', 'AAAA-MM-DD')  //ingresa la fecha de analisis
   .filter(ee.Filter.lt('CLOUD_COVER', '%')); // Filtro de nubosidad (ajusta el valor según tus necesidades)
 
 // Función para aplicar el filtro de nubosidad y eliminar las nubes utilizando QAPixel
