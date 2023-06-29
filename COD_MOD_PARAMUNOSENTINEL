@@ -1,0 +1,138 @@
+1) Importar los nucelos de los predios quien toma nombre de table
+2) Importar los predios que se llamaria table2
+3) Importar los predios con buffer quien se llamaria table3
+
+
+
+// Definir el área de interés
+var roi = table; //table corresponde al shape o poligono de la region extensa
+
+// Filtrar la colección de imágenes por fecha y área de interés
+var collection = ee.ImageCollection('COPERNICUS/S2')
+  .filterBounds(roi)
+  .filterDate('AAAA-MM-DD', 'AAAA-MM-DD')  //ingresa la fecha de analisis
+  .filter(ee.Filter.lt('CLOUDY_PIXEL_PERCENTAGE', '%')); // Filtro de nubosidad (ajusta el valor según tus necesidades)
+
+// Función para aplicar el filtro de nubosidad y eliminar las nubes utilizando QA60
+var cloudMask = function(image) {
+  var qa = image.select('QA60');
+  var mask = qa.bitwiseAnd(1 << 10).eq(0).and(qa.bitwiseAnd(1 << 11).eq(0));
+  return image.updateMask(mask);
+};
+
+// Aplicar el filtro de nubosidad a la colección
+var filteredCollection = collection.map(cloudMask);
+
+// Visualizar la colección de imágenes del año 2021
+var median = filteredCollection.median();
+var visParams = {
+  bands: ['B4', 'B3', 'B2'], // Ajusta las bandas según tus necesidades
+  min: 0,
+  max: 3000 // Ajusta los valores de mínimo y máximo según tus necesidades
+};
+
+Map.addLayer(median.clip(roi), visParams, 'Año 2021',1);
+Map.addLayer(table2 , {color:'blue'}, 'predios',0);
+
+
+// Concatenación de las características
+var poligonos = bosque.merge(nobosque)
+//.merge(herbazal).merge(agua).merge(agricola).merge(artificial).merge(nubes).merge(sombras);
+
+// Muestreo de la imagen compuesta utilizando la colección de polígonos
+var puntos = median.sampleRegions({
+  collection: poligonos,
+  properties: ["landcover"],
+  scale: 30
+});
+
+// Obtención de una muestra aleatoria de la colección de características, limitada a 5000 puntos
+var puntos_final = puntos.randomColumn('random', 123)
+  .sort('random')
+  .limit(5000);
+
+// Obtención de los valores únicos de la propiedad "landcover"
+var uniqueLandcover = puntos_final.aggregate_array('landcover').distinct();
+
+// Iteración sobre cada valor de landcover y conteo del número de puntos
+uniqueLandcover.evaluate(function(landcoverValues) {
+  landcoverValues.forEach(function(landcover) {
+    var count = puntos_final.filter(ee.Filter.eq('landcover', landcover)).size();
+    print('Cantidad de puntos para landcover ' + landcover + ':', count);
+  });
+});
+
+print('Total de puntos', puntos_final);
+
+// Añadir un campo de valor aleatorio a la muestra y utilizarlo para dividir aproximadamente el 80%
+// de las características en un conjunto de entrenamiento y el 20% en un conjunto de validación.
+var sample = puntos_final.randomColumn();
+var trainingSample = sample.filter('random <= 0.8');
+var validationSample = sample.filter('random > 0.8');
+
+// Entrenamiento de un clasificador de bosque aleatorio de 100 árboles a partir de la muestra de entrenamiento.
+var trainedClassifier = ee.Classifier.smileRandomForest(100).train({
+  features: trainingSample,
+  classProperty: 'landcover',
+  inputProperties: median.bandNames()
+});
+
+// Obtención de información sobre el clasificador entrenado.
+print('Results of trained classifier', trainedClassifier.explain());
+
+// Obtención de una matriz de confusión y precisión general para la muestra de entrenamiento.
+var trainAccuracy = trainedClassifier.confusionMatrix();
+print('Training error matrix', trainAccuracy);
+print('Training overall accuracy', trainAccuracy.accuracy());
+
+// Obtención de una matriz de confusión y precisión general para la muestra de validación.
+validationSample = validationSample.classify(trainedClassifier);
+var validationAccuracy = validationSample.errorMatrix('landcover', 'classification');
+print('Validation error matrix', validationAccuracy);
+print('Validation accuracy', validationAccuracy.accuracy());
+
+// Clasificación de la imagen compuesta a partir del clasificador entrenado.
+var imgClassified = median.classify(trainedClassifier).clip(table3);
+
+// Añadir las capas al mapa.
+var classVis = {
+  min: 1,
+  max: 2,
+ // ,'grey','white','black','orange', 'pink', 'yellow', 'orange'
+  palette: ['green', 'grey']
+};
+
+// Añadir las capas al mapa.
+Map.addLayer(imgClassified, classVis, 'Imagen Clasificada',1);
+
+Map.addLayer(table4);
+
+// Apply salt and pepper filter to the classified image
+var filteredImage = imgClassified.focal_mode({
+  radius: 1,  // Neighborhood radius (adjust as needed)
+  iterations: 1  // Number of times to apply the filter (adjust as needed)
+});
+
+// Add the filtered image to the map
+Map.addLayer(filteredImage, classVis, 'Filtered', 0);
+
+
+// Exportar la imagen clasificada con todas las bandas
+Export.image.toDrive({
+  image: median,
+  description: 'Imagenes', // Nombre de archivo de salida a exportar a Drive
+  scale: 30,
+  maxPixels: 1e13,
+  region: table
+   // Lista de nombres de las bandas que deseas exportar
+});
+
+// Exportar la imagen clasificada con todas las bandas
+Export.image.toDrive({
+  image: filteredImage,
+  description: 'Clasificado', // Nombre de archivo de salida a exportar a Drive
+  scale: 30,
+  maxPixels: 1e13,
+  region: table3
+   // Lista de nombres de las bandas que deseas exportar
+});
