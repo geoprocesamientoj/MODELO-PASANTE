@@ -1,7 +1,6 @@
-1) Importar los nucelos de los predios quien toma nombre de table
-2) Importar los predios que se llamaria table2
-3) Importar los predios con buffer quien se llamaria table3
-
+//1) Importar los nucelos de los predios quien toma nombre de table
+//2) Importar los predios que se llamaria table2
+//3) Importar los predios con buffer quien se llamaria table3
 
 
 // Definir el área de interés
@@ -136,3 +135,5 @@ Export.image.toDrive({
   region: table3
    // Lista de nombres de las bandas que deseas exportar
 });
+
+CODE GOOGLE EARTH ENGINE : https://code.earthengine.google.com/636cc60fb6a47562dd2008b5da8d4107?noload=1
