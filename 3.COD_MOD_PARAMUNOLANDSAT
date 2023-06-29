@@ -135,3 +135,6 @@ Export.image.toDrive({
   region: table2
    // Lista de nombres de las bandas que deseas exportar
 });
+
+
+CODE GOOGLE EARTH ENGINE: https://code.earthengine.google.com/47cb413d8bda2b14cfe94446bc94ab02?noload=1
