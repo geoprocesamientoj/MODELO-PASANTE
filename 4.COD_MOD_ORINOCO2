@@ -179,3 +179,6 @@ scale: 30,
 maxPixels: 1e13
 // Lista de nombres de las bandas que deseas exportar
 });
+
+
+CODIGO GOOGLE EARTH ENGINE : https://code.earthengine.google.com/b047c4f280adb7774492dedc35075f4f
